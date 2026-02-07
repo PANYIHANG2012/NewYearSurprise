@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎉新年小惊喜</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+        }
+
+        /* 容器 */
+        .container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* 下层 div */
+        .back-layer {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2rem;
+            z-index: 1;
+        }
+
+        /* 上层 div - PPT推出效果 */
+        .front-layer {
+            position: absolute;
+            inset: 0;
+            background: #1a1a2e;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            z-index: 2;
+            /* 关键动画属性 */
+            transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
+        }
+
+        /* 推出状态 - 由下往上移出 */
+        .front-layer.push-out {
+            transform: translateY(-100%);
+            opacity: 0;
+        }
+
+        /* 按钮样式 */
+        button {
+            margin-top: 2rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            background: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #c13651;
+        }
+
+        /* 重置按钮（在下层） */
+        .reset-btn {
+            margin-top: 1rem;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+        }
+
+        .reset-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 下层内容 -->
+    <div class="back-layer">
+        <div style="text-align: center;">
+            <h1>下层页面</h1>
+            <p style="font-size: 1rem; margin-top: 1rem; opacity: 0.8;">上层已推出</p>
+            <button class="reset-btn" onclick="reset()">重置</button>
+        </div>
+    </div>
+
+    <!-- 上层内容（带按钮） -->
+    <div class="front-layer" id="frontLayer">
+        <h1>上层页面</h1>
+        <p style="margin-top: 1rem; opacity: 0.7;">点击按钮推出</p>
+        <button onclick="pushOut()">推出</button>
+    </div>
+</div>
+
+<script>
+    function pushOut() {
+        document.getElementById('frontLayer').classList.add('push-out');
+    }
+
+    function reset() {
+        document.getElementById('frontLayer').classList.remove('push-out');
+    }
+</script>
+
+</body>
+</html>
