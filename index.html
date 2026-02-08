@@ -3,6 +3,7 @@
 <head>
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
    <title>🎉新年小惊喜</title>
    <style>
        * {
@@ -11,18 +12,20 @@
            box-sizing: border-box;
        }
 
+       /* 字体定义放最前面 */
+       @font-face {
+           font-family: "阿里妈妈东方大楷";
+           src: url("fonts/AlimamaDongFangDaKai-Regular.woff2") format("woff2"),
+                url("fonts/AlimamaDongFangDaKai-Regular.woff") format("woff");
+           font-weight: 400;
+           font-display: swap;
+       }
+
        body {
            font-family: "阿里妈妈东方大楷", sans-serif;
            overflow: hidden;
        }
-       /* 临时解决方案：使用本地字体文件（需下载字体到项目目录） */
-       @font-face {
-           font-family: "阿里妈妈东方大楷";
-           src: url("./fonts/AlimamaDongFangDaKai-Regular.woff2") format("woff2"),
-           url("./fonts/AlimamaDongFangDaKai-Regular.woff") format("woff");
-           font-weight: 400;
-           font-display: swap;
-       }
+
        /* 容器 */
        .container {
            position: relative;
@@ -58,25 +61,38 @@
            }
        }
 
-       /* 图片容器 - 完全居中 */
+       /* 烟花画布 - 全屏最顶层 */
+       #fireworks {
+           position: fixed;
+           top: 0;
+           left: 0;
+           width: 100vw;
+           height: 100vh;
+           pointer-events: none;
+           z-index: 9999;
+       }
+
+       /* 图片容器 - 只保留下层卡片 */
        .images-wrapper {
            position: relative;
+           width: 500px;
+           height: 250px;
            display: flex;
            justify-content: center;
            align-items: center;
+           margin-top: 30px;
        }
 
-       /* 两张图片单纯叠加居中 */
-       .overlap-img {
-           position: absolute;
-           width: 150px;
-           height: 150px;
+       .card {
+           width: 500px;
+           height: 250px;
            object-fit: cover;
        }
 
-       /* 图片上方文字 */
+       /* 移除 .cov 样式 */
+
        .top-text {
-           margin-bottom: 30px;
+           margin-bottom: 0;
            font-size: 1.5rem;
            font-weight: 600;
            text-align: center;
@@ -123,13 +139,11 @@
            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s;
        }
 
-       /* 推出效果 - 由下往上 */
        .front-layer.push-out {
            transform: translateY(-100%);
            opacity: 0;
        }
 
-       /* 文字容器 - 按钮上方，居左得当 */
        .text-container {
            margin-bottom: 40px;
            padding: 0 40px;
@@ -138,21 +152,14 @@
            text-align: left;
        }
 
-       .text-container h1 {
+       .text-container p {
            color: #fef2f2;
-           font-size: 2.5rem;
+           font-size: 1.5rem;
            font-weight: 700;
-           margin-bottom: 12px;
+           line-height: 1.8;
            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
        }
 
-       .text-container p {
-           color: #fecaca;
-           font-size: 1.1rem;
-           line-height: 1.6;
-       }
-
-       /* 推出按钮 */
        .push-btn {
            padding: 16px 48px;
            background: #fbbf24;
@@ -179,18 +186,19 @@
 </head>
 <body>
 
+<!-- 烟花画布 -->
+<canvas id="fireworks"></canvas>
+
 <div class="container">
    <!-- 第二层 -->
    <div class="back-layer" id="backLayer">
-       <!-- 图片上方文字 -->
        <div class="top-text">
            <p>试试切换手机深浅模式吧</p>
        </div>
        
-       <!-- 两张单纯叠加居中的图片 -->
+       <!-- 只保留下层卡片 -->
        <div class="images-wrapper">
-           <img src="./card.png" class="overlap-img">
-           <img src="./cardcover.png" class="overlap-img">
+           <img src="card.png" alt="" class="card">
        </div>
 
        <button class="reset-btn" onclick="reset()">返回</button>
@@ -207,14 +215,213 @@
 </div>
 
 <script>
+   // 烟花系统
+   const canvas = document.getElementById('fireworks');
+   const ctx = canvas.getContext('2d');
+   let fireworks = [];
+   let particles = [];
+   let isRunning = false;
+
+   function resizeCanvas() {
+       canvas.width = window.innerWidth;
+       canvas.height = window.innerHeight;
+   }
+   resizeCanvas();
+   window.addEventListener('resize', resizeCanvas);
+
+   // 丰富颜色库
+   const colorSchemes = [
+       [0, 60, 120, 180],      // 红橙黄绿青
+       [240, 280, 320, 360],   // 蓝紫粉红
+       [30, 90, 150, 210],     // 橙黄绿青蓝
+       [300, 340, 20, 80]      // 紫红橙黄
+   ];
+
+   class Firework {
+       constructor() {
+           this.x = Math.random() * canvas.width;
+           this.y = canvas.height;
+           this.targetY = Math.random() * canvas.height * 0.3 + 50; // 不太低，50px以上
+           this.speed = 6 + Math.random() * 4;
+           this.angle = -Math.PI / 2 + (Math.random() - 0.5) * 0.5;
+           this.vx = Math.cos(this.angle) * this.speed;
+           this.vy = Math.sin(this.angle) * this.speed;
+           
+           // 随机选一个色系，再随机取一个色相
+           const scheme = colorSchemes[Math.floor(Math.random() * colorSchemes.length)];
+           this.hue = scheme[Math.floor(Math.random() * scheme.length)] + Math.random() * 20 - 10;
+           
+           this.exploded = false;
+           this.trail = []; // 拖尾轨迹
+           this.trailLength = 8;
+       }
+
+       update() {
+           // 保存轨迹
+           this.trail.push({x: this.x, y: this.y});
+           if (this.trail.length > this.trailLength) {
+               this.trail.shift();
+           }
+
+           this.x += this.vx;
+           this.y += this.vy;
+           this.vy += 0.15;
+
+           if (this.vy >= 0 || this.y <= this.targetY) {
+               this.explode();
+           }
+       }
+
+       explode() {
+           this.exploded = true;
+           const particleCount = 25 + Math.random() * 20;
+           for (let i = 0; i < particleCount; i++) {
+               particles.push(new Particle(this.x, this.y, this.hue));
+           }
+       }
+
+       draw() {
+           // 绘制拖尾
+           for (let i = 0; i < this.trail.length; i++) {
+               const point = this.trail[i];
+               const alpha = (i / this.trail.length) * 0.8;
+               const size = (i / this.trail.length) * 3;
+               ctx.beginPath();
+               ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+               ctx.fillStyle = `hsla(${this.hue}, 100%, 60%, ${alpha})`;
+               ctx.fill();
+           }
+
+           // 绘制头部
+           ctx.beginPath();
+           ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+           ctx.fillStyle = `hsl(${this.hue}, 100%, 70%)`;
+           ctx.shadowBlur = 10;
+           ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
+           ctx.fill();
+           ctx.shadowBlur = 0;
+       }
+   }
+
+   class Particle {
+       constructor(x, y, hue) {
+           this.x = x;
+           this.y = y;
+           const angle = Math.random() * Math.PI * 2;
+           const speed = Math.random() * 6 + 2;
+           this.vx = Math.cos(angle) * speed;
+           this.vy = Math.sin(angle) * speed;
+           this.hue = hue + Math.random() * 40 - 20; // 颜色变化更丰富
+           this.life = 1;
+           this.decay = Math.random() * 0.015 + 0.01;
+           this.gravity = 0.08;
+           this.trail = [];
+           this.trailLength = 5;
+       }
+
+       update() {
+           this.trail.push({x: this.x, y: this.y});
+           if (this.trail.length > this.trailLength) {
+               this.trail.shift();
+           }
+
+           this.x += this.vx;
+           this.y += this.vy;
+           this.vy += this.gravity;
+           this.vx *= 0.98; // 空气阻力
+           this.life -= this.decay;
+       }
+
+       draw() {
+           // 绘制拖尾
+           for (let i = 0; i < this.trail.length; i++) {
+               const point = this.trail[i];
+               const alpha = (i / this.trail.length) * this.life * 0.6;
+               ctx.beginPath();
+               ctx.arc(point.x, point.y, 1.5, 0, Math.PI * 2);
+               ctx.fillStyle = `hsla(${this.hue}, 100%, 60%, ${alpha})`;
+               ctx.fill();
+           }
+
+           // 绘制粒子
+           ctx.save();
+           ctx.globalAlpha = this.life;
+           ctx.beginPath();
+           ctx.arc(this.x, this.y, 2.5, 0, Math.PI * 2);
+           ctx.fillStyle = `hsl(${this.hue}, 100%, 65%)`;
+           ctx.shadowBlur = 6;
+           ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
+           ctx.fill();
+           ctx.shadowBlur = 0;
+           ctx.restore();
+       }
+   }
+
+   let fireworkCount = 0;
+   const maxFireworks = 3;
+
+   function animate() {
+       if (!isRunning) return;
+       
+       // 透明背景，使用clearRect
+       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+       // 随机位置生成，2-3个烟花
+       if (fireworkCount < maxFireworks && Math.random() < 0.02) {
+           fireworks.push(new Firework());
+           fireworkCount++;
+       }
+
+       fireworks = fireworks.filter(fw => {
+           if (!fw.exploded) {
+               fw.update();
+               fw.draw();
+               return true;
+           }
+           return false;
+       });
+
+       particles = particles.filter(p => {
+           p.update();
+           p.draw();
+           return p.life > 0;
+       });
+
+       if (fireworks.length === 0 && particles.length === 0 && fireworkCount >= maxFireworks) {
+           setTimeout(() => {
+               fireworkCount = 0;
+           }, 500 + Math.random() * 1000); // 随机间隔后再放下一轮
+       }
+
+       requestAnimationFrame(animate);
+   }
+
+   function startFireworks() {
+       isRunning = true;
+       fireworkCount = 0;
+       animate();
+   }
+
+   function stopFireworks() {
+       isRunning = false;
+       ctx.clearRect(0, 0, canvas.width, canvas.height);
+       fireworks = [];
+       particles = [];
+       fireworkCount = 0;
+   }
+
    function pushOut() {
        document.getElementById('frontLayer').classList.add('push-out');
+       setTimeout(startFireworks, 300);
    }
 
    function reset() {
        document.getElementById('frontLayer').classList.remove('push-out');
+       stopFireworks();
    }
 </script>
+
+
 
 </body>
 </html>
