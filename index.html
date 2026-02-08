@@ -1,118 +1,221 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🎉新年小惊喜</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>🎉新年小惊喜</title>
+   <style>
+       * {
+           margin: 0;
+           padding: 0;
+           box-sizing: border-box;
+       }
 
-        body {
-            overflow: hidden;
-        }
+       body {
+           font-family: "阿里妈妈东方大楷", sans-serif;
+           overflow: hidden;
+       }
+       /* 临时解决方案：使用本地字体文件（需下载字体到项目目录） */
+       @font-face {
+           font-family: "阿里妈妈东方大楷";
+           src: url("./fonts/AlimamaDongFangDaKai-Regular.woff2") format("woff2"),
+           url("./fonts/AlimamaDongFangDaKai-Regular.woff") format("woff");
+           font-weight: 400;
+           font-display: swap;
+       }
+       /* 容器 */
+       .container {
+           position: relative;
+           width: 100vw;
+           height: 100vh;
+       }
 
-        /* 容器 */
-        .container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
+       /* 第二层 - 自动判断深浅模式 */
+       .back-layer {
+           position: absolute;
+           inset: 0;
+           display: flex;
+           flex-direction: column;
+           justify-content: center;
+           align-items: center;
+           z-index: 1;
+           transition: background-color 0.3s;
+       }
 
-        /* 下层 div */
-        .back-layer {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 2rem;
-            z-index: 1;
-        }
+       /* 浅色模式 */
+       @media (prefers-color-scheme: light) {
+           .back-layer {
+               background: #ffffff;
+               color: #1a1a1a;
+           }
+       }
 
-        /* 上层 div - PPT推出效果 */
-        .front-layer {
-            position: absolute;
-            inset: 0;
-            background: #1a1a2e;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            z-index: 2;
-            /* 关键动画属性 */
-            transition: transform 0.6s ease-in-out, opacity 0.6s ease-in-out;
-        }
+       /* 深色模式 */
+       @media (prefers-color-scheme: dark) {
+           .back-layer {
+               background: #0a0a0a;
+               color: #ffffff;
+           }
+       }
 
-        /* 推出状态 - 由下往上移出 */
-        .front-layer.push-out {
-            transform: translateY(-100%);
-            opacity: 0;
-        }
+       /* 图片容器 - 完全居中 */
+       .images-wrapper {
+           position: relative;
+           width: 200px;
+           height: 200px;
+           display: flex;
+           justify-content: center;
+           align-items: center;
+       }
 
-        /* 按钮样式 */
-        button {
-            margin-top: 2rem;
-            padding: 1rem 2rem;
-            font-size: 1rem;
-            background: #e94560;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
+       /* 两张图片单纯叠加居中 */
+       .overlap-img {
+           position: absolute;
+           width: 150px;
+           height: 150px;
+           object-fit: cover;
+       }
 
-        button:hover {
-            background: #c13651;
-        }
+       /* 图片上方文字 */
+       .top-text {
+           margin-bottom: 30px;
+           font-size: 1.5rem;
+           font-weight: 600;
+           text-align: center;
+       }
 
-        /* 重置按钮（在下层） */
-        .reset-btn {
-            margin-top: 1rem;
-            background: rgba(255,255,255,0.2);
-            border: 2px solid white;
-        }
+       /* 重置按钮 */
+       .reset-btn {
+           margin-top: 40px;
+           padding: 12px 24px;
+           background: transparent;
+           border: 2px solid currentColor;
+           color: inherit;
+           border-radius: 8px;
+           cursor: pointer;
+           font-size: 1rem;
+           transition: all 0.3s;
+       }
 
-        .reset-btn:hover {
-            background: rgba(255,255,255,0.3);
-        }
-    </style>
+       .reset-btn:hover {
+           background: currentColor;
+       }
+
+       @media (prefers-color-scheme: light) {
+           .reset-btn:hover {
+               color: #fff;
+           }
+       }
+       @media (prefers-color-scheme: dark) {
+           .reset-btn:hover {
+               color: #000;
+           }
+       }
+
+       /* 第一层 - 过年喜庆红 */
+       .front-layer {
+           position: absolute;
+           inset: 0;
+           background: linear-gradient(135deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%);
+           display: flex;
+           flex-direction: column;
+           justify-content: center;
+           align-items: center;
+           z-index: 2;
+           transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.6s;
+       }
+
+       /* 推出效果 - 由下往上 */
+       .front-layer.push-out {
+           transform: translateY(-100%);
+           opacity: 0;
+       }
+
+       /* 文字容器 - 按钮上方，居左得当 */
+       .text-container {
+           margin-bottom: 40px;
+           padding: 0 40px;
+           max-width: 600px;
+           width: 100%;
+           text-align: left;
+       }
+
+       .text-container h1 {
+           color: #fef2f2;
+           font-size: 2.5rem;
+           font-weight: 700;
+           margin-bottom: 12px;
+           text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+       }
+
+       .text-container p {
+           color: #fecaca;
+           font-size: 1.1rem;
+           line-height: 1.6;
+       }
+
+       /* 推出按钮 */
+       .push-btn {
+           padding: 16px 48px;
+           background: #fbbf24;
+           color: #7c2d12;
+           border: none;
+           border-radius: 50px;
+           font-size: 1.2rem;
+           font-weight: 600;
+           cursor: pointer;
+           box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+           transition: all 0.3s;
+       }
+
+       .push-btn:hover {
+           transform: translateY(-2px);
+           box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+           background: #f59e0b;
+       }
+
+       .push-btn:active {
+           transform: translateY(0);
+       }
+   </style>
 </head>
 <body>
 
 <div class="container">
-    <!-- 下层内容 -->
-    <div class="back-layer">
-        <div style="text-align: center;">
-            <h1>下层页面</h1>
-            <p style="font-size: 1rem; margin-top: 1rem; opacity: 0.8;">上层已推出</p>
-            <button class="reset-btn" onclick="reset()">重置</button>
-        </div>
-    </div>
+   <!-- 第二层 -->
+   <div class="back-layer" id="backLayer">
+       <!-- 图片上方文字 -->
+       <div class="top-text">
+           <p>试试切换手机深浅模式吧</p>
+       </div>
+       
+       <!-- 两张单纯叠加居中的图片 -->
+       <div class="images-wrapper">
+           <img src="./card.png" class="overlap-img">
+           <img src="./cardcover.png" class="overlap-img">
+       </div>
 
-    <!-- 上层内容（带按钮） -->
-    <div class="front-layer" id="frontLayer">
-        <h1>上层页面</h1>
-        <p style="margin-top: 1rem; opacity: 0.7;">点击按钮推出</p>
-        <button onclick="pushOut()">推出</button>
-    </div>
+       <button class="reset-btn" onclick="reset()">返回</button>
+   </div>
+
+   <!-- 第一层 -->
+   <div class="front-layer" id="frontLayer">
+       <div class="text-container">
+           <p>转眼，2025蛇年已至尽头，我们马上就要迎来崭新的2026马年<br>过去的一年千千万万诉不尽，将到的一年日日夜夜梦可成，<br>让我们共同启封这个惊喜！</p>
+       </div>
+       
+       <button class="push-btn" onclick="pushOut()">进入</button>
+   </div>
 </div>
 
 <script>
-    function pushOut() {
-        document.getElementById('frontLayer').classList.add('push-out');
-    }
+   function pushOut() {
+       document.getElementById('frontLayer').classList.add('push-out');
+   }
 
-    function reset() {
-        document.getElementById('frontLayer').classList.remove('push-out');
-    }
+   function reset() {
+       document.getElementById('frontLayer').classList.remove('push-out');
+   }
 </script>
 
 </body>
